@@ -1,0 +1,70 @@
+.modal-header {
+  display: flex !important;
+  justify-content: flex-start !important;
+  align-items: center !important;
+  gap: 0.75rem !important;
+  padding: 1rem !important;
+  border-radius: 1rem 1rem 0 0 !important;
+  background-color: var(--modal-bg) !important;
+  color: var(--text-color) !important;
+  border-bottom: none !important;
+}
+
+.modal-content {
+  background-color: transparent !important;
+  border-radius: 1rem !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25) !important;
+}
+
+button.btn-close {
+  color: var(--modal-close-color) !important;
+  filter: brightness(0.8) !important;
+  transition: filter 0.2s ease !important;
+}
+button.btn-close:hover {
+  filter: brightness(1) !important;
+}
+
+.modal-body {
+  padding: 1.5rem !important;
+  font-size: 1.05rem !important;
+  color: var(--text-color) !important;
+  background-color: var(--modal-bg) !important;
+}
+
+.modal-footer {
+  display: flex !important;
+  justify-content: flex-end !important;
+  align-items: center !important;
+  gap: 0.75rem !important;
+  padding: 1rem !important;
+  border: none !important;
+  border-radius: 0 0 1rem 1rem !important;
+  background-color: var(--modal-bg) !important;
+}
+
+.modal-dialog button.dialog-btn,
+.modal-footer button {
+  padding: 0.6rem 1.4rem !important;
+  border-radius: 0.75rem !important;
+  border: none !important;
+  font-weight: 600 !important;
+  transition: all 0.2s ease !important;
+}
+
+.modal-footer button.btn-primary {
+  background-color: #086dd6 !important;
+  color: #fff !important;
+}
+.modal-footer button.btn-primary:hover {
+  background-color: #005bb5 !important;
+}
+
+.modal-footer button.btn-secondary {
+  background-color: #e0e0e0 !important;
+  color: #222 !important;
+}
+.dark .modal-footer button.btn-secondary {
+  background-color: #444 !important;
+  color: #eee !important;
+}

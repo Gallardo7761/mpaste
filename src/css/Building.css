@@ -1,0 +1,51 @@
+/* ================================
+   BUILDING COMPONENT - VISUAL ONLY
+================================== */
+
+.building-container {
+  font-family: 'Product Sans', sans-serif;
+  color: var(--fg-color);
+  animation: fadeInScale 0.5s ease;
+}
+
+.building-icon {
+  font-size: 4rem;
+  margin-bottom: 1rem;
+  animation: bounce 2s infinite;
+}
+
+.building-title {
+  font-size: 2rem;
+  font-weight: bold;
+}
+
+.building-subtitle {
+  font-size: 1.2rem;
+  margin-top: 0.5rem;
+  opacity: 0.75;
+}
+
+/* Animaciones */
+@keyframes fadeInScale {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes bounce {
+
+  0%,
+  100% {
+    transform: translateY(0px);
+  }
+
+  50% {
+    transform: translateY(-8px);
+  }
+}

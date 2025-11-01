@@ -1,0 +1,136 @@
+.footer {
+  background-color: var(--navbar-bg);
+  color: var(--fg-color);
+  border-top: 2px solid var(--border-color);
+  font-size: 1rem;
+  box-shadow: 0 -2px 8px var(--shadow-color);
+  position: relative;
+  z-index: 1;
+}
+
+.footer-title,
+.footer h6#devd {
+  font-family: "Product Sans";
+  font-size: 1.8rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+  color: var(--primary-color);
+}
+
+.footer-columns {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  margin-bottom: 2rem;
+  background-color: var(--bg-hover-color);
+  padding: 1.5rem;
+  border-radius: 1rem;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.04);
+}
+
+@media (min-width: 768px) {
+  .footer-columns {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: flex-start;
+  }
+}
+
+.footer-column {
+  flex: 1;
+  min-width: 200px;
+}
+
+.footer-column h5 {
+  font-size: 1.1rem;
+  margin-bottom: 0.75rem;
+  font-weight: 600;
+  color: var(--fg-color);
+}
+
+.footer-column ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.footer-column ul li {
+  margin-bottom: 0.5rem;
+}
+
+.footer-column ul li a {
+  color: var(--fg-color);
+  text-decoration: none;
+  
+}
+
+.footer-column ul li a:hover {
+  color: var(--primary-color);
+  text-shadow: 0 0 4px currentColor;
+}
+
+.footer-bottom {
+  font-size: 0.9rem;
+  opacity: 0.85;
+  text-align: center;
+  border-top: 1px solid var(--divider-color);
+}
+
+.footer-bottom a {
+  font-weight: 600;
+  text-decoration: none;
+  color: var(--fg-color);
+  
+}
+
+.footer-bottom a:hover {
+  text-shadow: 0 0 5px currentColor;
+  color: var(--primary-color);
+}
+
+.contact-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 1rem;
+  border-radius: 1rem;
+  font-size: 0.95rem;
+  background-color: var(--contact-info-bg);
+  color: var(--primary-color);
+  box-shadow: 0 4px 10px var(--shadow-color);
+  
+}
+
+.contact-info a {
+  font-weight: 600;
+  text-decoration: none;
+  color: var(--primary-color);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  
+}
+
+.contact-info a:hover {
+  transform: translateX(8px);
+  color: var(--secondary-color);
+}
+
+.contact-info .fa-icon {
+  font-size: 1.2rem;
+  color: var(--primary-color);
+}
+
+.heart-anim {
+  display: inline-block;
+  animation: heartbeat 1.5s infinite ease-in-out;
+}
+
+@keyframes heartbeat {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.15);
+  }
+}

@@ -1,0 +1,132 @@
+/* ================================
+   PANEL GENERAL
+================================== */
+.paste-panel {
+  background: var(--bg-color, rgba(255, 255, 255, 0.8));
+  color: var(--card-text, #222);
+}
+
+/* ================================
+   INPUTS, TEXTAREA Y SELECTS
+================================== */
+.paste-panel input,
+.paste-panel textarea,
+.paste-panel select {
+  border-radius: 0.75rem;
+  border: 1px solid var(--input-border, #ddd);
+  padding: 0.75rem 1rem;
+  font-size: 1.1rem !important;
+  background-color: var(--input-bg, rgba(255, 255, 255, 0.7));
+  color: var(--input-text, #222);
+}
+
+/* Floating label background */
+.paste-panel .form-floating textarea ~ label::after {
+  background-color: var(--input-bg, rgba(255, 255, 255, 0.7));
+}
+.dark .paste-panel .form-floating textarea ~ label::after {
+  background-color: var(--input-bg, #222);
+}
+
+/* ================================
+   BOTÓN PRINCIPAL
+================================== */
+.paste-panel button[type="submit"] {
+  padding: 0.6rem 1.4rem;
+  border-radius: 0.75rem;
+  background-color: #086dd6;
+  border: none;
+  font-weight: 600;
+  color: #fff;
+  transition: all 0.2s ease;
+}
+
+.paste-panel button[type="submit"]:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 16px rgba(8, 109, 214, 0.3);
+  background-color: #0a5ed6;
+}
+
+/* ================================
+   FORM-FLOATING LABEL
+================================== */
+.paste-panel .form-floating > label {
+  color: var(--label-color, #333);
+}
+
+/* Evitar azul por defecto en focus */
+.paste-panel .form-floating > .form-control:focus ~ label {
+  color: inherit;
+}
+
+/* ================================
+   FORM SWITCH / CHECK
+================================== */
+.paste-panel .form-check-label {
+  color: var(--text-color, #222);
+}
+
+.paste-panel .form-check-input:checked {
+  background-color: #086dd6;
+  border-color: #086dd6;
+}
+
+.paste-panel .form-check-input:focus {
+  box-shadow: 0 0 0 0.2rem rgba(8, 109, 214, 0.25);
+}
+
+/* ================================
+   DARK MODE
+================================== */
+.dark .paste-panel {
+  background: var(--bg-color, #222);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  color: var(--card-text, #eee);
+}
+
+.dark .paste-panel input,
+.dark .paste-panel textarea,
+.dark .paste-panel select {
+  background-color: var(--input-bg, #222);
+  border: 1px solid var(--input-border, #555);
+  color: var(--input-text, #eee);
+}
+
+.dark .paste-panel .form-floating > label {
+  color: var(--label-color, #eee);
+}
+
+.dark .paste-panel .form-floating > .form-control:focus ~ label {
+  color: inherit;
+}
+
+.dark .paste-panel .form-check-label {
+  color: var(--text-color, #fff);
+}
+
+.dark .paste-panel .form-check-input:checked {
+  background-color: #086dd6;
+  border-color: #086dd6;
+}
+
+.dark .paste-panel .form-check-input:focus {
+  box-shadow: 0 0 0 0.2rem rgba(8, 109, 214, 0.25);
+}
+
+.dark .paste-panel button[type="submit"] {
+  background-color: #086dd6;
+}
+
+.dark .paste-panel button[type="submit"]:hover {
+  background-color: #0a5ed6;
+}
+
+
+/* ================================
+   CODE EDITOR
+================================== */
+
+.code-editor {
+  border-radius: 0.75rem;
+  background-color: var(--code-bg);
+}

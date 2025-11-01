@@ -1,0 +1,12 @@
+{
+  "apiConfig": {
+    "baseUrl": "https://api.miarma.net/mpaste",
+    "endpoints": {
+      "pastes": {
+        "all": "/raw/v1/pastes",
+        "byId": "/raw/v1/pastes/:paste_id",
+        "byKey": "/v1/pastes/:paste_key"
+      }
+    }
+  }
+}

@@ -1,0 +1,43 @@
+/* ===================
+   SEARCH TOOLBAR
+=================== */
+.search-toolbar {
+  display: flex;
+  align-items: center;
+  border-radius: 999px;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  padding: 0.5rem 1rem;
+  background-color: var(--search-bg);
+  border: 1px solid var(--search-border) !important;
+}
+
+.search-toolbar:has(input:focus) {
+  transform: scale(1.02);
+  box-shadow: 0 6px 16px var(--shadow-color);
+  border-color: var(--accent-color) !important;
+  transition: all 0.2s ease-in-out;
+}
+
+.search-toolbar.focused {
+  transform: scale(1.02);
+  box-shadow: 0 6px 16px var(--shadow-color);
+  border-color: var(--accent-color) !important;
+  transition: all 0.2s ease-in-out;
+}
+
+.search-toolbar input.search-input {
+  all: unset;
+  flex-grow: 1;
+  width: 100%;
+  height: 24px;
+  font-size: 1.1rem;
+  font-family: "Open Sans", sans-serif;
+  padding-right: 1rem;
+  background: transparent !important;
+  color: var(--search-input-color);
+}
+
+.search-toolbar input.search-input::placeholder {
+  color: var(--search-placeholder);
+}

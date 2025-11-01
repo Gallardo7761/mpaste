@@ -1,0 +1,272 @@
+/* ================================
+   FUENTES PERSONALIZADAS
+================================== */
+@font-face {
+  font-family: "Fira Code";
+  src: url('/fonts/FiraCode.ttf');
+}
+
+@font-face {
+  font-family: "Open Sans";
+  src: url('/fonts/OpenSans.ttf');
+}
+
+@font-face {
+  font-family: "Product Sans";
+  src: url('/fonts/ProductSansRegular.ttf');
+}
+
+@font-face {
+  font-family: "Product Sans Italic";
+  src: url('/fonts/ProductSansItalic.ttf');
+}
+
+@font-face {
+  font-family: "Product Sans Italic Bold";
+  src: url('/fonts/ProductSansBoldItalic.ttf');
+}
+
+@font-face {
+  font-family: "Product Sans Bold";
+  src: url('/fonts/ProductSansBold.ttf');
+}
+
+/* ================================
+   PALETA DE COLORES
+================================== */
+
+:root {
+  --highlight-border: var(--accent-color);
+  --box-shadow-soft: 0 4px 6px var(--shadow-color);
+  --alert-bg: #f8d7da;
+}
+
+.light {
+  --primary-color: #333;
+  --secondary-color: #555;
+  --tertiary-color: #777;
+  --border-color: #dee2e6;
+  --divider-color: #ddd;
+  --bg-color: #fff;
+  --fg-color: #111;
+  --text-color: #111;
+  --muted-color: #666;
+  --shadow-color: rgba(0, 0, 0, 0.1);
+  --bg-hover-color: #f0f0f0;
+  --bg-search-bar: rgba(0,0,0,0.05);
+  --input-bg: #fff;
+  --input-border: var(--border-color);
+  --placeholder-color: #999;
+  --input-text: var(--text-color);
+  --accent-color: #333;
+  --btn-bg: #333;
+  --btn-bg-hover: #555;
+  --btn-text: #fff;
+  --btn-text-hover: #fff;
+  --icon-color: var(--fg-color);
+  --highlight-border: #777;
+  --card-bg: #fff;
+  --card-button: #fff;
+  --card-border: var(--border-color);
+  --card-text: var(--text-color);
+  --card-text-secondary: #555;
+  --card-btn-hover: rgba(0,0,0,0.05);
+  --card-muted-text: #666;
+  --item-bg: #fff;
+  --item-text: var(--text-color);
+  --subtitle-color: #666;
+  --login-bg: #f9f9f9;
+  --label-color: var(--text-color);
+  --login-btn-bg: #333;
+  --login-btn-hover: #555;
+  --login-btn-text: #fff;
+  --login-btn-text-hover: #111;
+  --header-mask-color: rgba(0,0,0,0.1);
+  --navbar-bg: #fff;
+  --navbar-brand-color: #333;
+  --navbar-brand-hover: #555;
+  --navbar-link-color: #111;
+  --navbar-link-hover-bg: #f0f0f0;
+  --navbar-link-hover-color: #333;
+  --navbar-dropdown-bg: #fff;
+  --navbar-dropdown-item-color: #111;
+  --navbar-dropdown-item-hover-color: #333;
+  --navbar-divider-color: #ccc;
+  --hamburger-color: #333;
+  --navbar-shadow: 0 2px 6px rgba(0,0,0,0.05);
+  --show-btn-color: #333;
+  --show-btn-hover: #555;
+  --header-btn-hover: rgba(0,0,0,0.05);
+  --list-hover-bg: rgba(0,0,0,0.03);
+  --list-hover-bg-light: #f5f5f5;
+  --list-active-bg-light: #e0e0e0;
+  --search-bg: rgba(255,255,255,0.6);
+  --search-border: var(--border-color);
+  --search-input-color: #111;
+  --search-placeholder: #999;
+  --toolbar-btn-color: #111;
+  --toolbar-btn-hover: rgba(0,0,0,0.07);
+  --modal-bg: #fff;
+  --modal-header-border: var(--border-color);
+  --modal-body-bg: #fff;
+  --modal-close-color: #111;
+  --contact-info-bg: #f5f5f5;
+  --balance-report-bg: #fff;
+  --file-card-bg: #fff;
+  --sidebar-bg: #eee;
+  --code-bg: #fffffe;
+}
+
+.dark {
+  --primary-color: #eee;
+  --secondary-color: #ccc;
+  --tertiary-color: #999;
+  --border-color: #555;
+  --divider-color: #555;
+  --bg-color: #111;
+  --fg-color: #fff;
+  --text-color: #fff;
+  --muted-color: #aaa;
+  --shadow-color: rgba(0,0,0,0.5);
+  --bg-hover-color: #1e1e1e;
+  --bg-search-bar: rgba(255,255,255,0.05);
+  --input-bg: #1e1e1e;
+  --input-border: var(--border-color);
+  --placeholder-color: #888;
+  --input-text: #fff;
+  --accent-color: #eee;
+  --btn-bg: #eee;
+  --btn-bg-hover: #ccc;
+  --btn-text: #111;
+  --btn-text-hover: #000;
+  --icon-color: #fff;
+  --highlight-border: #999;
+  --alert-bg: #500;
+  --card-bg: #1e1e1e;
+  --card-button: #1e1e1e;
+  --card-border: var(--border-color);
+  --card-text: #fff;
+  --card-text-secondary: #ccc;
+  --card-btn-hover: rgba(255,255,255,0.05);
+  --item-bg: #1e1e1e;
+  --item-text: #fff;
+  --subtitle-color: #aaa;
+  --login-bg: #111;
+  --label-color: #fff;
+  --login-btn-bg: #eee;
+  --login-btn-hover: #ccc;
+  --login-btn-text: #111;
+  --login-btn-text-hover: #000;
+  --header-mask-color: rgba(0,0,0,0.3);
+  --navbar-bg: #111;
+  --navbar-brand-color: #eee;
+  --navbar-brand-hover: #ccc;
+  --navbar-link-color: #fff;
+  --navbar-link-hover-bg: #1e1e1e;
+  --navbar-link-hover-color: #ccc;
+  --navbar-dropdown-bg: #1e1e1e;
+  --navbar-dropdown-item-color: #fff;
+  --navbar-dropdown-item-hover-color: #ccc;
+  --navbar-divider-color: #555;
+  --hamburger-color: #eee;
+  --navbar-shadow: 0 2px 5px rgba(0,0,0,0.5);
+  --show-btn-color: #eee;
+  --show-btn-hover: #ccc;
+  --card-muted-text: #aaa;
+  --header-btn-hover: rgba(255,255,255,0.05);
+  --list-hover-bg: rgba(255,255,255,0.03);
+  --list-hover-bg-dark: #333;
+  --list-active-bg-dark: #444;
+  --search-bg: rgba(255,255,255,0.1);
+  --search-border: var(--border-color);
+  --search-input-color: #fff;
+  --search-placeholder: #888;
+  --toolbar-btn-color: #fff;
+  --toolbar-btn-hover: rgba(255,255,255,0.08);
+  --modal-bg: #1e1e1e;
+  --modal-header-border: var(--border-color);
+  --modal-body-bg: #1e1e1e;
+  --modal-close-color: #fff;
+  --contact-info-bg: #111;
+  --balance-report-bg: #1e1e1e;
+  --file-card-bg: #1e1e1e;
+  --sidebar-bg: #000;
+  --code-bg: #1e1e1e;
+}
+
+/* ================================
+   ESTILOS BASE / RESET SUAVE
+================================== */
+html,
+body {
+  font-family: "Open Sans", sans-serif;
+  color: var(--text-color);
+  background-color: var(--bg-color);
+  
+}
+
+body {
+  background-color: transparent !important; /* compatibilidad navbar fija */
+}
+
+main {
+  color: var(--text-color);
+  background-color: var(--bg-color);
+}
+
+html, body, #root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+/* Tipografía global */
+div,
+label,
+input,
+p,
+span,
+a,
+button {
+  font-family: "Open Sans", sans-serif;
+  color: var(--text-color);
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: "Product Sans", sans-serif;
+  color: var(--text-color);
+}
+
+.custom-border {
+  border: 1px solid var(--border-color) !important;
+}
+
+.custom-border-top {
+  border-top: 1px solid var(--border-color) !important;
+}
+
+.custom-border-bottom {
+  border-bottom: 1px solid var(--border-color) !important;
+}
+
+.custom-border-left {
+  border-left: 1px solid var(--border-color) !important;
+}
+
+.custom-border-right {
+  border-right: 1px solid var(--border-color) !important;
+}
+
+.custom-text-muted {
+  color: var(--muted-color) !important;
+}
+
+div.fill {
+  height: calc(100% - 71px);
+}
+
