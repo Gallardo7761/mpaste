@@ -11,7 +11,7 @@ import { useDataContext } from "@/hooks/useDataContext";
 import PasswordModal from "@/components/Auth/PasswordModal.jsx";
 
 const PastePanel = ({ onSubmit, publicPastes }) => {
-	const { paste_key } = useParams();
+	const { pasteKey } = useParams();
 	const navigate = useNavigate();
 	const { getData } = useDataContext();
 	const [title, setTitle] = useState("");
@@ -30,8 +30,8 @@ const PastePanel = ({ onSubmit, publicPastes }) => {
 			title,
 			content,
 			syntax,
-			burn_after: burnAfter,
-			is_private: isPrivate,
+			burnAfter: burnAfter,
+			isPrivate: isPrivate,
 			password: password || null,
 		};
 		if (onSubmit) onSubmit(paste);
@@ -42,8 +42,11 @@ const PastePanel = ({ onSubmit, publicPastes }) => {
 	};
 
 	const fetchPaste = async (key, pwd = "") => {
-		const url = `https://api.miarma.net/mpaste/v1/pastes/${key}`;
-		const { data, error } = await getData(url, {}, {
+		const url = import.meta.env.MODE === 'production' ? 
+		`https://api.miarma.net/v2/mpaste/pastes/${key}` :
+		`http://localhost:8081/v2/mpaste/pastes/${key}`;
+		
+		const { data, error } = await getData(url, {}, false, {
 			'X-Paste-Password': pwd
 		});
 
@@ -66,8 +69,8 @@ const PastePanel = ({ onSubmit, publicPastes }) => {
 	};
 
 	useEffect(() => {
-		if (paste_key) fetchPaste(paste_key);
-	}, [paste_key]);
+		if (pasteKey) fetchPaste(pasteKey);
+	}, [pasteKey]);
 
 	return (
 		<>
@@ -93,7 +96,7 @@ const PastePanel = ({ onSubmit, publicPastes }) => {
 									{publicPastes && publicPastes.length > 0 ? (
 										publicPastes.map((paste) => (
 											<PublicPasteItem
-												key={paste.paste_key}
+												key={paste.pasteKey}
 												paste={paste}
 												onSelect={handleSelectPaste}
 											/>
@@ -224,7 +227,7 @@ const PastePanel = ({ onSubmit, publicPastes }) => {
 				onClose={() => setShowPasswordModal(false)}
 				onSubmit={(pwd) => {
 					setShowPasswordModal(false);
-					fetchPaste(paste_key, pwd); // reintentas con la pass
+					fetchPaste(pasteKey, pwd); // reintentas con la pass
 				}}
 			/>
 		</>

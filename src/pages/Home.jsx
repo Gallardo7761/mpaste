@@ -7,22 +7,21 @@ import { useState } from 'react';
 import { DataProvider } from '@/context/DataContext';
 import NotificationModal from '@/components/NotificationModal';
 import { useSearch } from "@/context/SearchContext";
+import { useError } from '@/context/ErrorContext';
 
 const Home = () => {
   const { config, configLoading } = useConfig();
+  const { showError } = useError();
 
   if (configLoading) return <p><LoadingIcon /></p>;
 
   const reqConfig = {
     baseUrl: `${config.apiConfig.baseUrl}${config.apiConfig.endpoints.pastes.all}`,
-    params: {
-      _sort: 'created_at',
-      _order: 'desc',
-    },
+    params: {}
   };
 
   return (
-    <DataProvider config={reqConfig}>
+    <DataProvider config={reqConfig} onError={showError}>
       <HomeContent reqConfig={reqConfig} />
     </DataProvider>
   );
@@ -45,8 +44,8 @@ const HomeContent = ({ reqConfig }) => {
   const handleSubmit = async (paste) => {
     try {
       const createdPaste = await postData(reqConfig.baseUrl, paste);
-      if (createdPaste && createdPaste.is_private) {
-        setKey(createdPaste.paste_key);
+      if (createdPaste && createdPaste.isPrivate) {
+        setKey(createdPaste.pasteKey);
       }
     } catch (error) {
       setError(error);

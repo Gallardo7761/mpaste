@@ -2,13 +2,6 @@ import Editor from "@monaco-editor/react";
 import { useTheme } from "@/hooks/useTheme";
 import { useRef } from "react";
 import PropTypes from "prop-types";
-import { loader } from '@monaco-editor/react';
-
-loader.config({
-    'vs/nls': {
-        availableLanguages: { '*': 'es' },
-    },
-});
 
 const CodeEditor = ({ className = "", syntax, readOnly, onChange, value }) => {
     const { theme } = useTheme();
