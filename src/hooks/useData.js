@@ -92,10 +92,10 @@ export const useData = (config, onError) => {
     if (config?.baseUrl) fetchData();
   }, [config, fetchData]);
 
-  const requestWrapper = async (method, endpoint, payload = null, refresh = false, extraHeaders = {}) => {
+  const requestWrapper = async (method, endpoint, payload = null, refresh = false) => {
     try {
       const isFormData = payload instanceof FormData;
-      const headers = { ...getAuthHeaders(isFormData), ...extraHeaders };
+      const headers = getAuthHeaders(isFormData);
       const cfg = { headers };
       let response;
 
@@ -131,7 +131,7 @@ export const useData = (config, onError) => {
     dataLoading,
     dataError,
     clearError,
-    getData: (url, params, refresh = true, headers = {}) => requestWrapper("get", url, params, refresh, headers),
+    getData: (url, params, refresh = true) => requestWrapper("get", url, params, refresh),
     postData: (url, body, refresh = true) => requestWrapper("post", url, body, refresh),
     putData: (url, body, refresh = true) => requestWrapper("put", url, body, refresh),
     deleteData: (url, refresh = true) => requestWrapper("delete", url, null, refresh),

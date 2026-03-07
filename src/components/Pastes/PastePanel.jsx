@@ -14,78 +14,76 @@ const PastePanel = ({ onSubmit, publicPastes }) => {
 	const { pasteKey } = useParams();
 	const navigate = useNavigate();
 	const { getData } = useDataContext();
-	const [title, setTitle] = useState("");
-	const [content, setContent] = useState("");
-	const [syntax, setSyntax] = useState("");
-	const [burnAfter, setBurnAfter] = useState(false);
-	const [isPrivate, setIsPrivate] = useState(false);
-	const [password, setPassword] = useState("");
+
+	const [formData, setFormData] = useState({
+		title: "",
+		content: "",
+		syntax: "",
+		burnAfter: false,
+		isPrivate: false,
+		password: ""
+	});
+
 	const [selectedPaste, setSelectedPaste] = useState(null);
-	const [error, setError] = useState(null);
+	const [editorErrors, setEditorErrors] = useState([]);
+	const [fieldErrors, setFieldErrors] = useState({});
 	const [showPasswordModal, setShowPasswordModal] = useState(false);
 
-	const handleSubmit = (e) => {
+	const handleSubmit = async (e) => {
 		e.preventDefault();
-		const paste = {
-			title,
-			content,
-			syntax,
-			burnAfter: burnAfter,
-			isPrivate: isPrivate,
-			password: password || null,
-		};
-		if (onSubmit) onSubmit(paste);
-	};
+		setFieldErrors({});
+		setEditorErrors([]);
 
-	const handleSelectPaste = async (key) => {
-		navigate(`/${key}`);
-	};
-
-	const fetchPaste = async (key, pwd = "") => {
-		const url = import.meta.env.MODE === 'production' ? 
-		`https://api.miarma.net/v2/mpaste/pastes/${key}` :
-		`http://localhost:8081/v2/mpaste/pastes/${key}`;
-		
-		const { data, error } = await getData(url, {}, false, {
-			'X-Paste-Password': pwd
-		});
-
-		if (error) {
-			if (error?.status === 401) {
-				setShowPasswordModal(true);
-				return;
+		try {
+			if (onSubmit) await onSubmit(formData);
+		} catch (error) {
+			if (error.status === 422 && error.errors) {
+				const newFieldErrors = {};
+				Object.entries(error.errors).forEach(([field, msg]) => {
+					if (field === "content") {
+						setEditorErrors([{ lineNumber: 1, message: msg }]);
+					} else {
+						newFieldErrors[field] = msg;
+					}
+				});
+				setFieldErrors(newFieldErrors);
 			} else {
-				setError(error);
-				setSelectedPaste(null);
-				return;
+				showError(error);
 			}
 		}
-
-		setError(null);
-		setSelectedPaste(data);
-		setTitle(data.title);
-		setContent(data.content);
-		setSyntax(data.syntax || "plaintext");
 	};
 
-	useEffect(() => {
-		if (pasteKey) fetchPaste(pasteKey);
-	}, [pasteKey]);
+	const handleSelectPaste = async (key) => navigate(`/${key}`);
+
+	const fetchPaste = async (key, pwd = "") => {
+		const url = import.meta.env.MODE === 'production'
+			? `https://api.miarma.net/v2/mpaste/pastes/${key}`
+			: `http://localhost:8081/v2/mpaste/pastes/${key}`;
+
+		const data = await getData(url, { password: pwd }, false);
+
+		if (!data) return;
+
+		setSelectedPaste(data);
+		setFormData({
+			title: data.title ?? "",
+			content: data.content ?? "",
+			syntax: data.syntax || "plaintext",
+			burnAfter: data.burnAfter || false,
+			isPrivate: data.isPrivate || false,
+			password: ""
+		});
+	};
+
+	useEffect(() => { if (pasteKey) fetchPaste(pasteKey); }, [pasteKey]);
+
+	const handleChange = (key, value) => {
+		setFormData(prev => ({ ...prev, [key]: value }));
+	};
 
 	return (
 		<>
 			<div className="paste-panel border-0 flex-fill d-flex flex-column min-h-0 p-3">
-				{error &&
-					<Alert variant="danger" onClose={() => setError(null)} dismissible>
-						<strong>
-							<span className="text-danger">{
-								error.status == 404 ? "404: Paste no encontrada." :
-									"Ha ocurrido un error al cargar la paste."
-							}</span>
-						</strong>
-					</Alert>
-				}
-
 				<Form onSubmit={handleSubmit} className="flex-fill d-flex flex-column min-h-0">
 					<Row className="g-3 flex-fill min-h-0">
 						<Col xs={12} lg={2} className="order-last order-lg-first d-flex flex-column flex-fill min-h-0 overflow-hidden">
@@ -111,10 +109,11 @@ const PastePanel = ({ onSubmit, publicPastes }) => {
 						<Col xs={12} lg={7} className="d-flex flex-column flex-fill min-h-0 overflow-hidden">
 							<CodeEditor
 								className="flex-fill custom-border rounded-4 overflow-hidden pt-4 pe-4"
-								syntax={syntax}
+								syntax={formData.syntax}
 								readOnly={!!selectedPaste}
-								onChange={selectedPaste ? undefined : setContent}
-								value={content}
+								onChange={(val) => handleChange("content", val)}
+								value={formData.content ?? ""}
+								editorErrors={editorErrors}
 							/>
 						</Col>
 
@@ -132,10 +131,11 @@ const PastePanel = ({ onSubmit, publicPastes }) => {
 									<Form.Control
 										disabled={!!selectedPaste}
 										type="text"
-										placeholder="Título de la paste"
-										value={title}
-										onChange={(e) => setTitle(e.target.value)}
+										value={formData.title}
+										onChange={(e) => handleChange("title", e.target.value)}
+										isInvalid={!!fieldErrors.title}
 									/>
+									<Form.Control.Feedback type="invalid">{fieldErrors.title}</Form.Control.Feedback>
 								</FloatingLabel>
 
 								<FloatingLabel
@@ -149,8 +149,8 @@ const PastePanel = ({ onSubmit, publicPastes }) => {
 								>
 									<Form.Select
 										disabled={!!selectedPaste}
-										value={syntax}
-										onChange={(e) => setSyntax(e.target.value)}
+										value={formData.syntax}
+										onChange={(e) => handleChange("syntax", e.target.value)}
 									>
 										<option value="">Sin resaltado</option>
 										<option value="javascript">JavaScript</option>
@@ -189,8 +189,8 @@ const PastePanel = ({ onSubmit, publicPastes }) => {
 									disabled={!!selectedPaste}
 									id="burnAfter"
 									label="volátil"
-									checked={burnAfter}
-									onChange={(e) => setBurnAfter(e.target.checked)}
+									checked={formData.burnAfter}
+									onChange={(e) => handleChange("burnAfter", e.target.checked)}
 									className="ms-1 d-flex gap-2 align-items-center"
 								/>
 
@@ -199,13 +199,13 @@ const PastePanel = ({ onSubmit, publicPastes }) => {
 									disabled={!!selectedPaste}
 									id="isPrivate"
 									label="privado"
-									checked={isPrivate}
-									onChange={(e) => setIsPrivate(e.target.checked)}
+									checked={formData.isPrivate}
+									onChange={(e) => handleChange("isPrivate", e.target.checked)}
 									className="ms-1 d-flex gap-2 align-items-center"
 								/>
 
-								{isPrivate && (
-									<PasswordInput onChange={(e) => setPassword(e.target.value)} />
+								{formData.isPrivate && (
+									<PasswordInput onChange={(e) => handleChange("password", e.target.value)} />
 								)}
 
 								<div className="d-flex justify-content-end">
@@ -227,7 +227,7 @@ const PastePanel = ({ onSubmit, publicPastes }) => {
 				onClose={() => setShowPasswordModal(false)}
 				onSubmit={(pwd) => {
 					setShowPasswordModal(false);
-					fetchPaste(pasteKey, pwd); // reintentas con la pass
+					fetchPaste(pasteKey, pwd);
 				}}
 			/>
 		</>

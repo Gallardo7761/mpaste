@@ -1,16 +1,29 @@
 import Editor from "@monaco-editor/react";
 import { useTheme } from "@/hooks/useTheme";
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
 import PropTypes from "prop-types";
+import * as monaco from "monaco-editor";
 
-const CodeEditor = ({ className = "", syntax, readOnly, onChange, value }) => {
+const CodeEditor = ({ className = "", syntax, readOnly, onChange, value, editorErrors = [] }) => {
     const { theme } = useTheme();
     const editorRef = useRef(null);
 
-    const onMount = (editor) => {
-        editorRef.current = editor;
-        editor.focus();
-    }
+    useEffect(() => {
+        if (!editorRef.current) return;
+        const model = editorRef.current.getModel();
+        if (!model) return;
+
+        monaco.editor.setModelMarkers(model, "owner", editorErrors.map(err => ({
+            startLineNumber: err.lineNumber,
+            startColumn: 1,
+            endLineNumber: err.lineNumber,
+            endColumn: model.getLineLength(err.lineNumber) + 1,
+            message: err.message,
+            severity: monaco.MarkerSeverity.Error
+        })));
+    }, [editorErrors]);
+
+    const onMount = (editor) => { editorRef.current = editor; editor.focus(); }
 
     return (
         <div className={`code-editor ${className}`}>
@@ -18,7 +31,7 @@ const CodeEditor = ({ className = "", syntax, readOnly, onChange, value }) => {
                 language={syntax || "plaintext"}
                 value={value || ""}
                 theme={theme === "dark" ? "vs-dark" : "vs-light"}
-                onChange={(value) => onChange?.(value)}
+                onChange={onChange}
                 onMount={onMount}
                 options={{
                     minimap: { enabled: false },
@@ -30,10 +43,6 @@ const CodeEditor = ({ className = "", syntax, readOnly, onChange, value }) => {
                     scrollbar: { verticalScrollbarSize: 0 },
                     wordWrap: "on",
                     formatOnPaste: true,
-                    suggest: {
-                        showFields: true,
-                        showFunctions: true,
-                    },
                     readOnly: readOnly || false,
                 }}
             />
@@ -47,6 +56,7 @@ CodeEditor.propTypes = {
     readOnly: PropTypes.bool,
     onChange: PropTypes.func,
     value: PropTypes.string,
+    editorErrors: PropTypes.array,
 };
 
 export default CodeEditor;
