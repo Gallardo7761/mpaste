@@ -34,12 +34,10 @@ const HomeContent = ({ reqConfig }) => {
   const { searchTerm } = useSearch();
 
   if (dataLoading) return <p><LoadingIcon /></p>;
-  if (dataError) return <p>Error loading data</p>;
 
-  const filtered = data.filter(paste =>
-    paste.title.toLowerCase().includes((searchTerm ?? "").toLowerCase()) ||
-    paste.content.toLowerCase().includes((searchTerm ?? "").toLowerCase())
-  );
+  const filtered = (data && Array.isArray(data)) ? data.filter(paste =>
+    paste.title.toLowerCase().includes((searchTerm ?? "").toLowerCase())
+  ) : [];
 
   const handleSubmit = async (paste) => {
     try {
@@ -63,7 +61,7 @@ const HomeContent = ({ reqConfig }) => {
           <span>
             Tu paste privado ha sido creado. Puedes acceder a él mediante el siguiente enlace:
             <br /><br />
-            <a href={`https://paste.miarma.net/${key}`}>https://paste.miarma.net/${key}</a>
+            <a href={`https://paste.miarma.net/${key}`}>https://paste.miarma.net/{key}</a>
             <br /><br />
             Recuerda que este enlace es único y no se puede recuperar si se pierde.
           </span>

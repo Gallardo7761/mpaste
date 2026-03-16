@@ -92,10 +92,15 @@ export const useData = (config, onError) => {
     if (config?.baseUrl) fetchData();
   }, [config, fetchData]);
 
-  const requestWrapper = async (method, endpoint, payload = null, refresh = false) => {
+  const requestWrapper = async (method, endpoint, payload = null, refresh = false, extraHeaders = {}) => {
     try {
       const isFormData = payload instanceof FormData;
-      const headers = getAuthHeaders(isFormData);
+
+      const headers = {
+        ...getAuthHeaders(isFormData),
+        ...extraHeaders
+      };
+
       const cfg = { headers };
       let response;
 
@@ -115,11 +120,11 @@ export const useData = (config, onError) => {
     } catch (err) {
       const error = handleAxiosError(err);
 
-      if (error.status !== 422 && onError) {
-        onError(error);
+      if (error.status !== 403 && error.status !== 422) {
+        if (onError) onError(error);
+        setError(error);
       }
-
-      setError(error);
+  
       throw error;
     }
   };
@@ -131,7 +136,7 @@ export const useData = (config, onError) => {
     dataLoading,
     dataError,
     clearError,
-    getData: (url, params, refresh = true) => requestWrapper("get", url, params, refresh),
+    getData: (url, params, refresh = true, headers = {}) => requestWrapper("get", url, params, refresh, headers),
     postData: (url, body, refresh = true) => requestWrapper("post", url, body, refresh),
     putData: (url, body, refresh = true) => requestWrapper("put", url, body, refresh),
     deleteData: (url, refresh = true) => requestWrapper("delete", url, null, refresh),

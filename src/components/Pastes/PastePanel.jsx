@@ -60,19 +60,35 @@ const PastePanel = ({ onSubmit, publicPastes }) => {
 			? `https://api.miarma.net/v2/mpaste/pastes/${key}`
 			: `http://localhost:8081/v2/mpaste/pastes/${key}`;
 
-		const data = await getData(url, { password: pwd }, false);
+		const headers = pwd ? { "X-Paste-Password": pwd } : {};
 
-		if (!data) return;
+		try {
+			const response = await getData(url, null, false, headers);
 
-		setSelectedPaste(data);
-		setFormData({
-			title: data.title ?? "",
-			content: data.content ?? "",
-			syntax: data.syntax || "plaintext",
-			burnAfter: data.burnAfter || false,
-			isPrivate: data.isPrivate || false,
-			password: ""
-		});
+			if (response) {
+				setSelectedPaste(response);
+				setShowPasswordModal(false);
+				setFormData({
+					title: response.title ?? "",
+					content: response.content ?? "",
+					syntax: response.syntax || "plaintext",
+					burnAfter: response.burnAfter || false,
+					isPrivate: response.isPrivate || false,
+					password: ""
+				});
+			}
+		} catch (error) {
+			const status = error?.status ?? error?.response?.status;
+			if (status === 403) {
+				setShowPasswordModal(true);
+				return;
+			}
+
+			if (status === 404) {
+				setShowPasswordModal(false);
+				navigate("/", { replace: true });
+			}
+		}
 	};
 
 	useEffect(() => { if (pasteKey) fetchPaste(pasteKey); }, [pasteKey]);
