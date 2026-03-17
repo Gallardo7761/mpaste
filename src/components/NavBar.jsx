@@ -6,8 +6,10 @@ import { Navbar, Nav, Container } from 'react-bootstrap';
 import SearchToolbar from './SearchToolbar';
 import { useSearch } from "@/context/SearchContext";
 import NotificationModal from './NotificationModal';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faCircle } from '@fortawesome/free-solid-svg-icons';
 
-const NavBar = () => {
+const NavBar = ({ connected }) => {
   const [expanded, setExpanded] = useState(false);
   const [isLg, setIsLg] = useState(window.innerWidth >= 992);
   const [isXs, setIsXs] = useState(window.innerWidth < 576);
@@ -47,7 +49,6 @@ const NavBar = () => {
         className='shadow-none custom-border-bottom'
       >
         <Container fluid>
-          {/* brand */}
           <Nav.Item
             title="mpaste"
             className={`navbar-brand`}
@@ -58,12 +59,10 @@ const NavBar = () => {
             </div>
           </Nav.Item>
 
-          {/* ThemeButton SIEMPRE fijo */}
           <div className="order-lg-2 ms-auto me-2">
             <ThemeButton onlyIcon={isXs} />
           </div>
 
-          {/* burger */}
           <Navbar.Toggle
             aria-controls="main-navbar"
             className="custom-toggler border-0 order-lg-3"
@@ -79,7 +78,6 @@ const NavBar = () => {
             </svg>
           </Navbar.Toggle>
 
-          {/* links y search que colapsan */}
           <Navbar.Collapse id="main-navbar" className="order-lg-1">
             <Nav
               className={`me-auto gap-3 w-100 ${expanded ? "flex-column align-items-start mt-3 mb-2" : "d-flex align-items-center"}`}
@@ -92,11 +90,24 @@ const NavBar = () => {
                   onSearchChange={setSearchTerm}
                 />
               </div>
+              <div className="d-flex align-items-center gap-2 ms-2 px-2 py-1 " style={{ fontSize: '0.85rem' }}>
+                <FontAwesomeIcon
+                  icon={faCircle}
+                  className={connected ? "pulse-animation" : ""}
+                  style={{
+                    color: connected ? '#28a745' : '#dc3545',
+                    fontSize: '10px',
+                    filter: connected ? 'drop-shadow(0 0 4px #28a745)' : 'none'
+                  }}
+                />
+                <span className="text-secondary fw-medium">
+                  {connected ? 'conectado' : 'desconectado'}
+                </span>
+              </div>
             </Nav>
           </Navbar.Collapse>
         </Container>
       </Navbar>
-      {/* Contact Modal */}
       <NotificationModal
         show={showContactModal}
         onClose={() => setShowContactModal(false)}

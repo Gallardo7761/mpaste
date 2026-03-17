@@ -3,72 +3,108 @@ import PastePanel from '@/components/Pastes/PastePanel';
 import { useConfig } from '@/hooks/useConfig';
 import LoadingIcon from '@/components/LoadingIcon';
 import { useDataContext } from '@/hooks/useDataContext';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { DataProvider } from '@/context/DataContext';
 import NotificationModal from '@/components/NotificationModal';
 import { useSearch } from "@/context/SearchContext";
 import { useError } from '@/context/ErrorContext';
+import { useParams } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 
-const Home = () => {
+const Home = ({ mode, onConnectChange }) => {
+  const { pasteKey, rtKey } = useParams();
   const { config, configLoading } = useConfig();
   const { showError } = useError();
+  const location = useLocation();
 
-  if (configLoading) return <p><LoadingIcon /></p>;
+  const currentKey = mode === 'static' ? pasteKey : rtKey;
 
-  const reqConfig = {
-    baseUrl: `${config.apiConfig.baseUrl}${config.apiConfig.endpoints.pastes.all}`,
-    params: {}
-  };
+  const reqConfig = useMemo(() => {
+    if (!config?.apiConfig?.baseUrl) return null;
+
+    const baseApi = `${config.apiConfig.baseUrl}${config.apiConfig.endpoints.pastes.all}`;
+
+    if (mode === 'static' && currentKey) {
+      return {
+        baseUrl: `${baseApi}/s/${currentKey}`,
+        params: {}
+      };
+    }
+
+    return {
+      baseUrl: baseApi,
+      params: {}
+    };
+  }, [config, mode, currentKey]);
+
+  if (configLoading) return <p className="text-center mt-5"><LoadingIcon /></p>;
+
+  if (mode === 'static' && !reqConfig?.baseUrl?.includes('/s/')) {
+    return <div className="text-center mt-5"><LoadingIcon /></div>;
+  }
 
   return (
-    <DataProvider config={reqConfig} onError={showError}>
-      <HomeContent reqConfig={reqConfig} />
+    <DataProvider key={location.key} config={reqConfig} onError={showError}>
+      <HomeContent reqConfig={reqConfig} mode={mode} pasteKey={currentKey} onConnectChange={onConnectChange} />
     </DataProvider>
   );
 };
 
-const HomeContent = ({ reqConfig }) => {
-  const { data, dataLoading, dataError, postData } = useDataContext();
-  const [error, setError] = useState(null);
-  const [key, setKey] = useState(null);
+const HomeContent = ({ reqConfig, mode, pasteKey, onConnectChange }) => {
+  const { data, dataLoading, postData } = useDataContext();
+  const [createdKey, setCreatedKey] = useState(null);
   const { searchTerm } = useSearch();
 
-  if (dataLoading) return <p><LoadingIcon /></p>;
+  if (mode === 'static' && dataLoading) return <p className="text-center mt-5"><LoadingIcon /></p>;
 
   const filtered = (data && Array.isArray(data)) ? data.filter(paste =>
     paste.title.toLowerCase().includes((searchTerm ?? "").toLowerCase())
   ) : [];
 
-  const handleSubmit = async (paste) => {
+  const handleSubmit = async (paste, isAutosave = false) => {
     try {
       const createdPaste = await postData(reqConfig.baseUrl, paste);
-      if (createdPaste && createdPaste.isPrivate) {
-        setKey(createdPaste.pasteKey);
+      if (!isAutosave && createdPaste && !paste.pasteKey) {
+        setCreatedKey(createdPaste.pasteKey);
       }
     } catch (error) {
-      setError(error);
+      console.error("Error:", error);
     }
   };
 
   return (
     <>
-      <PastePanel onSubmit={handleSubmit} publicPastes={filtered} />
+      <PastePanel
+        onSubmit={handleSubmit}
+        publicPastes={filtered}
+        mode={mode}
+        pasteKey={pasteKey}
+        onConnectChange={onConnectChange}
+      />
+
       <NotificationModal
-        show={key !== null}
-        onClose={() => setKey(null)}
-        title="Link a tu paste privado"
+        show={createdKey !== null}
+        onClose={() => setCreatedKey(null)}
+        title="¡Bomba! Paste creado"
         message={
           <span>
-            Tu paste privado ha sido creado. Puedes acceder a él mediante el siguiente enlace:
+            Tu paste se ha guardado correctamente. Puedes compartirlo con este enlace:
             <br /><br />
-            <a href={`https://paste.miarma.net/${key}`}>https://paste.miarma.net/{key}</a>
+            <a
+              href={`https://paste.miarma.net/s/${createdKey}`}
+              target="_blank"
+              rel="noreferrer"
+              className="text-primary font-weight-bold"
+            >
+              https://paste.miarma.net/s/{createdKey}
+            </a>
             <br /><br />
-            Recuerda que este enlace es único y no se puede recuperar si se pierde.
+            {mode === 'rt' && "Nota: Al guardarlo, se ha creado una copia estática permanente."}
           </span>
         }
-        variant=""
+        variant="success"
         buttons={[
-          { label: "Cerrar", variant: "secondary", onClick: () => setKey(null) }
+          { label: "Cerrar", variant: "secondary", onClick: () => setCreatedKey(null) }
         ]}
       />
     </>

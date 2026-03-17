@@ -1,20 +1,31 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Form, Button, Row, Col, FloatingLabel, Alert } from "react-bootstrap";
 import '@/css/PastePanel.css';
 import PasswordInput from "@/components/Auth/PasswordInput";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faCode, faHeader } from "@fortawesome/free-solid-svg-icons";
+import { faCircle, faCode, faHeader } from "@fortawesome/free-solid-svg-icons";
 import CodeEditor from "./CodeEditor";
 import PublicPasteItem from "./PublicPasteItem";
 import { useParams, useNavigate } from "react-router-dom";
 import { useDataContext } from "@/hooks/useDataContext";
 import PasswordModal from "@/components/Auth/PasswordModal.jsx";
+import { Client } from "@stomp/stompjs";
+import SockJS from 'sockjs-client';
 
-const PastePanel = ({ onSubmit, publicPastes }) => {
-	const { pasteKey } = useParams();
+const PastePanel = ({ onSubmit, publicPastes, mode, pasteKey: propKey, onConnectChange }) => {
+	const { pasteKey: urlPasteKey, rtKey } = useParams();
 	const navigate = useNavigate();
 	const { getData } = useDataContext();
 
+	const activeKey = propKey || urlPasteKey || rtKey;
+
+	const [selectedPaste, setSelectedPaste] = useState(null);
+	const [editorErrors, setEditorErrors] = useState([]);
+	const [fieldErrors, setFieldErrors] = useState({});
+	const [showPasswordModal, setShowPasswordModal] = useState(false);
+	const [stompClient, setStompClient] = useState(null);
+	const [connected, setConnected] = useState(null);
+	const [isSaving, setIsSaving] = useState(false);
 	const [formData, setFormData] = useState({
 		title: "",
 		content: "",
@@ -24,10 +35,113 @@ const PastePanel = ({ onSubmit, publicPastes }) => {
 		password: ""
 	});
 
-	const [selectedPaste, setSelectedPaste] = useState(null);
-	const [editorErrors, setEditorErrors] = useState([]);
-	const [fieldErrors, setFieldErrors] = useState({});
-	const [showPasswordModal, setShowPasswordModal] = useState(false);
+	const lastSavedContent = useRef(formData.content);
+
+	const isReadOnly = !!selectedPaste || mode === 'rt';
+	const isRemoteChange = useRef(false);
+
+	useEffect(() => {
+		if (mode === 'static' && activeKey) {
+			fetchPaste(activeKey);
+		} else if (mode === 'create') {
+			setSelectedPaste(null);
+			setFormData({ title: "", content: "", syntax: "", burnAfter: false, isPrivate: false, password: "" });
+			setFieldErrors({});
+			setEditorErrors([]);
+		}
+	}, [activeKey, mode]);
+
+	useEffect(() => {
+		if (mode === 'rt' && activeKey) {
+			const socketUrl = import.meta.env.MODE === 'production'
+				? `https://api.miarma.net/v2/mpaste/ws`
+				: `http://localhost:8081/v2/mpaste/ws`;
+
+			const socket = new SockJS(socketUrl);
+			const client = new Client({
+				webSocketFactory: () => socket,
+				onConnect: () => {
+					setConnected(true);
+					onConnectChange(true);
+					client.subscribe(`/topic/session/${activeKey}`, (message) => {
+						try {
+							const remoteState = JSON.parse(message.body);
+
+							setFormData(prev => {
+								if (prev.content === remoteState.content && prev.syntax === remoteState.syntax) {
+									return prev;
+								}
+								isRemoteChange.current = true;
+								return {
+									...prev,
+									...remoteState
+								};
+							});
+						} catch (e) {
+							console.error("Error parseando el mensaje del socket", e);
+						}
+					});
+					client.publish({ destination: `/app/join/${activeKey}` });
+				},
+				onDisconnect: () => {
+					setConnected(false);
+					onConnectChange(false);
+				}
+			});
+
+			client.activate();
+			setStompClient(client);
+			return () => client.deactivate();
+		} else {
+			setConnected(false);
+		}
+	}, [mode, activeKey]);
+
+	useEffect(() => {
+		if (mode === 'rt' && connected && formData.content) {
+
+			if (isRemoteChange.current) {
+				lastSavedContent.current = formData.content;
+				isRemoteChange.current = false;
+				return;
+			}
+
+			if (formData.content !== lastSavedContent.current) {
+				const timer = setTimeout(async () => {
+					setIsSaving(true);
+					try {
+						const dataToSave = {
+							...formData,
+							pasteKey: activeKey,
+							title: mode === 'rt' ? `Sesión: ${activeKey?.substring(0, 8)}` : formData.title
+						};
+						await onSubmit(dataToSave, true);
+						lastSavedContent.current = formData.content;
+						console.log("Autosave");
+					} catch (err) {
+						console.error("Error autosaving:", err);
+					} finally {
+						setIsSaving(false);
+					}
+				}, 5000);
+
+				return () => clearTimeout(timer);
+			}
+		}
+	}, [formData.content, mode, connected, activeKey]);
+
+	const handleChange = (key, value) => {
+		const updatedData = { ...formData, [key]: value };
+
+		setFormData(updatedData);
+
+		if (connected && stompClient && activeKey) {
+			stompClient.publish({
+				destination: `/app/edit/${activeKey}`,
+				body: JSON.stringify(updatedData)
+			});
+		}
+	};
 
 	const handleSubmit = async (e) => {
 		e.preventDefault();
@@ -53,17 +167,17 @@ const PastePanel = ({ onSubmit, publicPastes }) => {
 		}
 	};
 
-	const handleSelectPaste = async (key) => navigate(`/${key}`);
+	const handleSelectPaste = (key) => navigate(`/s/${key}`);
 
 	const fetchPaste = async (key, pwd = "") => {
 		const url = import.meta.env.MODE === 'production'
-			? `https://api.miarma.net/v2/mpaste/pastes/${key}`
-			: `http://localhost:8081/v2/mpaste/pastes/${key}`;
+			? `https://api.miarma.net/v2/mpaste/pastes/s/${key}`
+			: `http://localhost:8081/v2/mpaste/pastes/s/${key}`;
 
 		const headers = pwd ? { "X-Paste-Password": pwd } : {};
 
 		try {
-			const response = await getData(url, null, false, headers);
+			const response = await getData(url, null, false, headers, true);
 
 			if (response) {
 				setSelectedPaste(response);
@@ -89,12 +203,6 @@ const PastePanel = ({ onSubmit, publicPastes }) => {
 				navigate("/", { replace: true });
 			}
 		}
-	};
-
-	useEffect(() => { if (pasteKey) fetchPaste(pasteKey); }, [pasteKey]);
-
-	const handleChange = (key, value) => {
-		setFormData(prev => ({ ...prev, [key]: value }));
 	};
 
 	return (
@@ -134,20 +242,20 @@ const PastePanel = ({ onSubmit, publicPastes }) => {
 						</Col>
 
 						<Col xs={12} lg={3} className="d-flex flex-column flex-fill min-h-0 overflow-hidden">
-							<div className="d-flex flex-column flex-fill gap-3 overflow-auto">
+							<div className="d-flex flex-column flex-fill gap-3 overflow-auto p-1">
 								<FloatingLabel
 									controlId="titleInput"
 									label={
-										<span className={selectedPaste ? "text-white" : ""}>
+										<span className={isReadOnly ? "text-white" : ""}>
 											<FontAwesomeIcon icon={faHeader} className="me-2" />
 											Título
 										</span>
 									}
 								>
 									<Form.Control
-										disabled={!!selectedPaste}
+										disabled={isReadOnly}
 										type="text"
-										value={formData.title}
+										value={mode === 'rt' ? `Sesión: ${activeKey?.substring(0, 8)}` : formData.title}
 										onChange={(e) => handleChange("title", e.target.value)}
 										isInvalid={!!fieldErrors.title}
 									/>
@@ -202,7 +310,7 @@ const PastePanel = ({ onSubmit, publicPastes }) => {
 
 								<Form.Check
 									type="switch"
-									disabled={!!selectedPaste}
+									disabled={isReadOnly}
 									id="burnAfter"
 									label="volátil"
 									checked={formData.burnAfter}
@@ -212,7 +320,7 @@ const PastePanel = ({ onSubmit, publicPastes }) => {
 
 								<Form.Check
 									type="switch"
-									disabled={!!selectedPaste}
+									disabled={isReadOnly}
 									id="isPrivate"
 									label="privado"
 									checked={formData.isPrivate}
@@ -221,14 +329,14 @@ const PastePanel = ({ onSubmit, publicPastes }) => {
 								/>
 
 								{formData.isPrivate && (
-									<PasswordInput onChange={(e) => handleChange("password", e.target.value)} />
+									<PasswordInput disabled={isReadOnly} onChange={(e) => handleChange("password", e.target.value)} />
 								)}
 
 								<div className="d-flex justify-content-end">
 									<Button
 										variant="primary"
 										type="submit"
-										disabled={!!selectedPaste}
+										disabled={isReadOnly}
 									>
 										Crear paste
 									</Button>
@@ -243,7 +351,7 @@ const PastePanel = ({ onSubmit, publicPastes }) => {
 				onClose={() => setShowPasswordModal(false)}
 				onSubmit={(pwd) => {
 					setShowPasswordModal(false);
-					fetchPaste(pasteKey, pwd);
+					fetchPaste(activeKey, pwd);
 				}}
 			/>
 		</>

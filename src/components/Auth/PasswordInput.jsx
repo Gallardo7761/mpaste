@@ -5,7 +5,7 @@ import '@/css/PasswordInput.css';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faEye, faEyeSlash, faKey } from '@fortawesome/free-solid-svg-icons';
 
-const PasswordInput = ({ value, onChange, name = "password" }) => {
+const PasswordInput = ({ disabled, value, onChange, name = "password" }) => {
   const [show, setShow] = useState(false);
 
   const toggleShow = () => setShow(prev => !prev);
@@ -28,6 +28,7 @@ const PasswordInput = ({ value, onChange, name = "password" }) => {
           placeholder=""
           onChange={onChange}
           className="rounded-4 pe-5"
+          disabled={disabled}
         />
       </FloatingLabel>
 

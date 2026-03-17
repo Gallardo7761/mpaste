@@ -63,3 +63,21 @@ hr {
   }
 }
 
+@keyframes pulse-green {
+  0% {
+    transform: scale(0.95);
+    filter: drop-shadow(0 0 0px rgba(40, 167, 69, 0.7));
+  }
+  70% {
+    transform: scale(1);
+    filter: drop-shadow(0 0 6px rgba(40, 167, 69, 0.4));
+  }
+  100% {
+    transform: scale(0.95);
+    filter: drop-shadow(0 0 0px rgba(40, 167, 69, 0));
+  }
+}
+
+.pulse-animation {
+  animation: pulse-green 2s infinite;
+}

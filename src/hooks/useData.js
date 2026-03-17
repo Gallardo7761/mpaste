@@ -5,141 +5,102 @@ export const useData = (config, onError) => {
   const [data, setData] = useState(null);
   const [dataLoading, setLoading] = useState(true);
   const [dataError, setError] = useState(null);
-  const configRef = useRef();
 
-  useEffect(() => {
-    if (config?.baseUrl) {
-      configRef.current = config;
-    }
-  }, [config]);
+  const configString = JSON.stringify(config);
 
   const getAuthHeaders = (isFormData = false) => {
     const token = localStorage.getItem("token");
-
     const headers = {};
     if (token) headers.Authorization = `Bearer ${token}`;
-
-    if (!isFormData) {
-      headers["Content-Type"] = "application/json";
-    }
-
+    if (!isFormData) headers["Content-Type"] = "application/json";
     return headers;
   };
 
   const handleAxiosError = (err) => {
-    if (err.response && err.response.data) {
-      const data = err.response.data;
-
-      if (data.status === 422 && data.errors) {
-        return {
-          status: 422,
-          errors: data.errors,
-          path: data.path ?? null,
-          timestamp: data.timestamp ?? null,
-        };
-      }
-
-      return {
-        status: data.status ?? err.response.status,
-        error: data.error ?? null,
-        message: data.message ?? err.response.statusText ?? "Error desconocido",
-        path: data.path ?? null,
-        timestamp: data.timestamp ?? null,
-      };
-    }
-
-    if (err.request) {
-      return {
-        status: null,
-        error: "Network Error",
-        message: "No se pudo conectar al servidor",
-        path: null,
-        timestamp: new Date().toISOString(),
-      };
-    }
-
-    return {
-      status: null,
-      error: "Client Error",
-      message: err.message || "Error desconocido",
-      path: null,
-      timestamp: new Date().toISOString(),
+    const errorData = {
+      status: err.response?.status || (err.request ? "Network Error" : "Client Error"),
+      message: err.response?.data?.message || err.message || "Error desconocido",
+      errors: err.response?.data?.errors || null
     };
+    return errorData;
   };
 
   const fetchData = useCallback(async () => {
-    const current = configRef.current;
-    if (!current?.baseUrl) return;
+    if (!config?.baseUrl) return;
 
     setLoading(true);
     setError(null);
 
     try {
-      const response = await axios.get(current.baseUrl, {
+      const response = await axios.get(config.baseUrl, {
         headers: getAuthHeaders(),
-        params: current.params,
+        params: config.params,
       });
       setData(response.data);
     } catch (err) {
       const error = handleAxiosError(err);
-      setError(error);
+      const isPasteLookup = config.baseUrl.includes('/pastes/');
+
+      if (isPasteLookup && (error.status === 403 || error.status === 404 || error.status === 500)) {
+        console.log("Not in DB, assuming real-time...");
+        setError(error);
+      } else {
+        if (onError) onError(error);
+        setError(error);
+      }
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [configString, onError]);
 
   useEffect(() => {
-    if (config?.baseUrl) fetchData();
-  }, [config, fetchData]);
+    fetchData();
+  }, [fetchData]);
 
-  const requestWrapper = async (method, endpoint, payload = null, refresh = false, extraHeaders = {}) => {
+  const requestWrapper = async (method, endpoint, payload = null, refresh = false, extraHeaders = {}, silent = false) => {
     try {
       const isFormData = payload instanceof FormData;
 
-      const headers = {
+      const combinedHeaders = {
         ...getAuthHeaders(isFormData),
         ...extraHeaders
       };
 
-      const cfg = { headers };
-      let response;
+      const axiosConfig = {
+        headers: combinedHeaders
+      };
 
+      let response;
       if (method === "get") {
-        if (payload) cfg.params = payload;
-        response = await axios.get(endpoint, cfg);
+        response = await axios.get(endpoint, {
+          ...axiosConfig,
+          params: payload
+        });
       } else if (method === "delete") {
-        if (payload) cfg.data = payload;
-        response = await axios.delete(endpoint, cfg);
+        response = await axios.delete(endpoint, {
+          ...axiosConfig,
+          data: payload
+        });
       } else {
-        response = await axios[method](endpoint, payload, cfg);
+        response = await axios[method](endpoint, payload, axiosConfig);
       }
 
       if (refresh) await fetchData();
       return response.data;
-
     } catch (err) {
       const error = handleAxiosError(err);
-
-      if (error.status !== 403 && error.status !== 422) {
-        if (onError) onError(error);
-        setError(error);
+      if (!silent && error.status !== 422 && onError) {
+        onError(error);
       }
-  
       throw error;
     }
   };
 
-  const clearError = () => setError(null);
-
   return {
-    data,
-    dataLoading,
-    dataError,
-    clearError,
-    getData: (url, params, refresh = true, headers = {}) => requestWrapper("get", url, params, refresh, headers),
-    postData: (url, body, refresh = true) => requestWrapper("post", url, body, refresh),
-    putData: (url, body, refresh = true) => requestWrapper("put", url, body, refresh),
-    deleteData: (url, refresh = true) => requestWrapper("delete", url, null, refresh),
-    deleteDataWithBody: (url, body, refresh = true) => requestWrapper("delete", url, body, refresh)
+    data, dataLoading, dataError,
+    getData: (url, params, refresh = true, h = {}, silent = false) => requestWrapper("get", url, params, refresh, h, silent),
+    postData: (url, body, refresh = true, silent = false) => requestWrapper("post", url, body, refresh, silent),
+    putData: (url, body, refresh = true, silent = false) => requestWrapper("put", url, body, refresh, silent),
+    deleteData: (url, refresh = true, silent = false) => requestWrapper("delete", url, null, refresh, silent),
   };
 };

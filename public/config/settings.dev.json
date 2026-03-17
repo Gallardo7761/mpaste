@@ -4,8 +4,8 @@
     "endpoints": {
       "pastes": {
         "all": "/pastes",
-        "byId": "/:pasteId",
-        "byKey": "/:pasteKey"
+        "byId": "/by-id/:pasteId",
+        "byKey": "/s/:pasteKey"
       }
     }
   }

@@ -1,4 +1,4 @@
-import { createContext, useState, useContext } from 'react';
+import { createContext, useState, useContext, useCallback } from 'react';
 import NotificationModal from '../components/NotificationModal';
 
 const ErrorContext = createContext();
@@ -6,29 +6,28 @@ const ErrorContext = createContext();
 export const ErrorProvider = ({ children }) => {
   const [error, setError] = useState(null);
 
-  const showError = (err) => {
+  const showError = useCallback((err) => {
+    if (err.status === 422) return;
+
     setError({
-      title: err.status ? `Error ${err.status}` : "Error",
-      message: err.message,
-      variant: 'danger'
+      title: err.status ? `Error ${err.status}` : "Ups!",
+      message: err.message || "Algo ha salido mal miarma",
     });
-  };
+  }, []);
 
   const closeError = () => setError(null);
 
   return (
     <ErrorContext.Provider value={{ showError }}>
       {children}
-      {error && (
-        <NotificationModal
-          show={true}
-          onClose={closeError}
-          title={error.title}
-          message={error.message}
-          variant='danger'
-          buttons={[{ label: "Aceptar", variant: "danger", onClick: closeError }]}
-        />
-      )}
+      <NotificationModal
+        show={error !== null}
+        onClose={closeError}
+        title={error?.title || "Error"}
+        message={error?.message || ""}
+        variant='danger'
+        buttons={[{ label: "Entendido", variant: "danger", onClick: closeError }]}
+      />
     </ErrorContext.Provider>
   );
 };
