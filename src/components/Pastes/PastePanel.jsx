@@ -32,6 +32,7 @@ const PastePanel = ({ onSubmit, publicPastes, mode, pasteKey: propKey, onConnect
 		syntax: "",
 		burnAfter: false,
 		isPrivate: false,
+		isRt: false,
 		password: ""
 	});
 
@@ -113,7 +114,8 @@ const PastePanel = ({ onSubmit, publicPastes, mode, pasteKey: propKey, onConnect
 						const dataToSave = {
 							...formData,
 							pasteKey: activeKey,
-							title: mode === 'rt' ? `Sesión: ${activeKey?.substring(0, 8)}` : formData.title
+							isRt: true,
+							title: mode === 'rt' ? `Sesión: ${activeKey}` : formData.title
 						};
 						await onSubmit(dataToSave, true);
 						lastSavedContent.current = formData.content;
@@ -131,7 +133,7 @@ const PastePanel = ({ onSubmit, publicPastes, mode, pasteKey: propKey, onConnect
 	}, [formData.content, mode, connected, activeKey]);
 
 	const handleChange = (key, value) => {
-		const updatedData = { ...formData, [key]: value };
+		const updatedData = { ...formData, [key]: value, isRt: mode === 'rt' };
 
 		setFormData(updatedData);
 
@@ -255,7 +257,7 @@ const PastePanel = ({ onSubmit, publicPastes, mode, pasteKey: propKey, onConnect
 									<Form.Control
 										disabled={isReadOnly}
 										type="text"
-										value={mode === 'rt' ? `Sesión: ${activeKey?.substring(0, 8)}` : formData.title}
+										value={mode === 'rt' ? `Sesión: ${activeKey}` : formData.title}
 										onChange={(e) => handleChange("title", e.target.value)}
 										isInvalid={!!fieldErrors.title}
 									/>
@@ -307,6 +309,19 @@ const PastePanel = ({ onSubmit, publicPastes, mode, pasteKey: propKey, onConnect
 										<option value="objectivec">Objective-C</option>
 									</Form.Select>
 								</FloatingLabel>
+
+								<div className="d-flex align-items-center ms-1">
+									{isSaving ? (
+										<span className="text-muted" style={{ fontSize: '0.8rem' }}>
+											<FontAwesomeIcon icon={faCircle} className="pulse-animation me-2" style={{ color: '#ffc107', fontSize: '8px' }} />
+											Guardando cambios...
+										</span>
+									) : (
+										<span className="text-success" style={{ fontSize: '0.8rem' }}>
+											Cambios guardados
+										</span>
+									)}
+								</div>
 
 								<Form.Check
 									type="switch"
