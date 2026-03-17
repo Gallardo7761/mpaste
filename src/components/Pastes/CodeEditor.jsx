@@ -34,13 +34,13 @@ const CodeEditor = ({ className = "", syntax, readOnly, onChange, value, editorE
                 onChange={onChange}
                 onMount={onMount}
                 options={{
-                    minimap: { enabled: false },
+                    minimap: { enabled: true },
                     automaticLayout: true,
                     fontFamily: 'Fira Code',
                     fontLigatures: true,
                     fontSize: 18,
                     lineHeight: 1.5,
-                    scrollbar: { verticalScrollbarSize: 0 },
+                    scrollbar: { verticalScrollbarSize: 10 },
                     wordWrap: "on",
                     formatOnPaste: true,
                     readOnly: readOnly || false,
