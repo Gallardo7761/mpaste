@@ -3,8 +3,7 @@ import { Modal, Button, Form } from 'react-bootstrap';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faLock } from '@fortawesome/free-solid-svg-icons';
 import { useState } from 'react';
-import PasswordInput from '@/components/Auth/PasswordInput';
-import { renderErrorAlert } from '@/util/alertHelpers';
+import PasswordInput from '@/components/Pastes/PasswordInput';
 import '@/css/PasswordModal.css';
 
 const PasswordModal = ({
@@ -36,8 +35,6 @@ const PasswordModal = ({
         <p className="mb-3">
           Esta paste está protegida con contraseña. Introduce la clave para continuar.
         </p>
-
-        {renderErrorAlert(error)}
 
         <PasswordInput
           value={password}

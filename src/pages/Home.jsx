@@ -7,63 +7,53 @@ import { useState, useMemo } from 'react';
 import { DataProvider } from '@/context/DataContext';
 import NotificationModal from '@/components/NotificationModal';
 import { useSearch } from "@/context/SearchContext";
-import { useError } from '@/context/ErrorContext';
-import { useParams } from 'react-router-dom';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useParams } from 'react-router-dom';
 
 const Home = ({ mode, onConnectChange }) => {
   const { pasteKey, rtKey } = useParams();
   const { config, configLoading } = useConfig();
-  const { showError } = useError();
   const location = useLocation();
+  const isStaticMode = mode === 'static';
 
-  const currentKey = mode === 'static' ? pasteKey : rtKey;
+  const currentKey = isStaticMode ? pasteKey : rtKey;
 
-  const reqConfig = useMemo(() => {
+  const requestConfig = useMemo(() => {
     if (!config?.apiConfig?.baseUrl) return null;
 
     const baseApi = `${config.apiConfig.baseUrl}${config.apiConfig.endpoints.pastes.all}`;
-
-    if (mode === 'static' && currentKey) {
-      return {
-        baseUrl: `${baseApi}/s/${currentKey}`,
-        params: {}
-      };
-    }
 
     return {
       baseUrl: baseApi,
       params: {}
     };
-  }, [config, mode, currentKey]);
+  }, [config]);
 
   if (configLoading) return <p className="text-center mt-5"><LoadingIcon /></p>;
 
-  if (mode === 'static' && !reqConfig?.baseUrl?.includes('/s/')) {
-    return <div className="text-center mt-5"><LoadingIcon /></div>;
-  }
-
   return (
-    <DataProvider key={location.key} config={reqConfig} onError={showError}>
-      <HomeContent reqConfig={reqConfig} mode={mode} pasteKey={currentKey} onConnectChange={onConnectChange} />
+    <DataProvider key={location.key} config={requestConfig}>
+      <HomeContent requestConfig={requestConfig} mode={mode} pasteKey={currentKey} onConnectChange={onConnectChange} />
     </DataProvider>
   );
 };
 
-const HomeContent = ({ reqConfig, mode, pasteKey, onConnectChange }) => {
+const HomeContent = ({ requestConfig, mode, pasteKey, onConnectChange }) => {
   const { data, dataLoading, postData } = useDataContext();
   const [createdKey, setCreatedKey] = useState(null);
   const { searchTerm } = useSearch();
+  const isStaticMode = mode === 'static';
 
-  if (mode === 'static' && dataLoading) return <p className="text-center mt-5"><LoadingIcon /></p>;
+  const filteredPublicPastes = useMemo(() => {
+    if (!Array.isArray(data)) return [];
+    const normalizedSearchTerm = (searchTerm ?? "").toLowerCase();
+    return data.filter((paste) => (paste.title ?? "").toLowerCase().includes(normalizedSearchTerm));
+  }, [data, searchTerm]);
 
-  const filtered = (data && Array.isArray(data)) ? data.filter(paste =>
-    paste.title.toLowerCase().includes((searchTerm ?? "").toLowerCase())
-  ) : [];
+  if (isStaticMode && dataLoading) return <p className="text-center mt-5"><LoadingIcon /></p>;
 
   const handleSubmit = async (paste, isAutosave = false) => {
     try {
-      const createdPaste = await postData(reqConfig.baseUrl, paste);
+      const createdPaste = await postData(requestConfig.baseUrl, paste);
       if (!isAutosave && createdPaste && !paste.pasteKey) {
         setCreatedKey(createdPaste.pasteKey);
       }
@@ -76,7 +66,7 @@ const HomeContent = ({ reqConfig, mode, pasteKey, onConnectChange }) => {
     <>
       <PastePanel
         onSubmit={handleSubmit}
-        publicPastes={filtered}
+        publicPastes={filteredPublicPastes}
         mode={mode}
         pasteKey={pasteKey}
         onConnectChange={onConnectChange}

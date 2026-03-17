@@ -1,21 +1,33 @@
 import { useState, useEffect, useRef } from "react";
-import { Form, Button, Row, Col, FloatingLabel, Alert } from "react-bootstrap";
+import { Form, Button, Row, Col, FloatingLabel } from "react-bootstrap";
 import '@/css/PastePanel.css';
-import PasswordInput from "@/components/Auth/PasswordInput";
+import PasswordInput from "@/components/Pastes/PasswordInput";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faCircle, faCode, faHeader } from "@fortawesome/free-solid-svg-icons";
 import CodeEditor from "./CodeEditor";
 import PublicPasteItem from "./PublicPasteItem";
 import { useParams, useNavigate } from "react-router-dom";
 import { useDataContext } from "@/hooks/useDataContext";
-import PasswordModal from "@/components/Auth/PasswordModal.jsx";
+import { useError } from '@/context/ErrorContext';
+import PasswordModal from "@/components/Pastes/PasswordModal.jsx";
 import { Client } from "@stomp/stompjs";
 import SockJS from 'sockjs-client';
+
+const INITIAL_FORM_DATA = {
+	title: "",
+	content: "",
+	syntax: "",
+	burnAfter: false,
+	isPrivate: false,
+	isRt: false,
+	password: ""
+};
 
 const PastePanel = ({ onSubmit, publicPastes, mode, pasteKey: propKey, onConnectChange }) => {
 	const { pasteKey: urlPasteKey, rtKey } = useParams();
 	const navigate = useNavigate();
 	const { getData } = useDataContext();
+	const { showError } = useError();
 
 	const activeKey = propKey || urlPasteKey || rtKey;
 
@@ -26,32 +38,30 @@ const PastePanel = ({ onSubmit, publicPastes, mode, pasteKey: propKey, onConnect
 	const [stompClient, setStompClient] = useState(null);
 	const [connected, setConnected] = useState(null);
 	const [isSaving, setIsSaving] = useState(false);
-	const [formData, setFormData] = useState({
-		title: "",
-		content: "",
-		syntax: "",
-		burnAfter: false,
-		isPrivate: false,
-		isRt: false,
-		password: ""
-	});
+	const [formData, setFormData] = useState({ ...INITIAL_FORM_DATA });
 
 	const lastSavedContent = useRef(formData.content);
 
 	const isReadOnly = !!selectedPaste || mode === 'rt';
 	const isRemoteChange = useRef(false);
 
+	// Sincroniza el panel cuando cambia el modo o la clave activa:
+	// - modo static: intenta cargar la paste seleccionada
+	// - modo create: reinicia todo el formulario y errores
 	useEffect(() => {
 		if (mode === 'static' && activeKey) {
 			fetchPaste(activeKey);
 		} else if (mode === 'create') {
 			setSelectedPaste(null);
-			setFormData({ title: "", content: "", syntax: "", burnAfter: false, isPrivate: false, password: "" });
+			setFormData({ ...INITIAL_FORM_DATA });
 			setFieldErrors({});
 			setEditorErrors([]);
 		}
 	}, [activeKey, mode]);
 
+	// Gestiona el ciclo de vida del WebSocket en tiempo real:
+	// conecta al entrar en modo rt y limpia la conexión al salir.
+	// Los cambios remotos marcan `isRemoteChange` para no disparar autosave en bucle.
 	useEffect(() => {
 		if (mode === 'rt' && activeKey) {
 			const socketUrl = import.meta.env.MODE === 'production'
@@ -98,6 +108,8 @@ const PastePanel = ({ onSubmit, publicPastes, mode, pasteKey: propKey, onConnect
 		}
 	}, [mode, activeKey]);
 
+	// Autosave con debounce en sesiones RT:
+	// solo guarda cuando el contenido local cambia y evita guardar cambios que vienen del socket.
 	useEffect(() => {
 		if (mode === 'rt' && connected && formData.content) {
 
@@ -132,6 +144,7 @@ const PastePanel = ({ onSubmit, publicPastes, mode, pasteKey: propKey, onConnect
 		}
 	}, [formData.content, mode, connected, activeKey]);
 
+	// Actualiza estado local y, si hay sesión RT activa, propaga el cambio al resto de clientes.
 	const handleChange = (key, value) => {
 		const updatedData = { ...formData, [key]: value, isRt: mode === 'rt' };
 
@@ -150,8 +163,16 @@ const PastePanel = ({ onSubmit, publicPastes, mode, pasteKey: propKey, onConnect
 		setFieldErrors({});
 		setEditorErrors([]);
 
+		const normalizedTitle = (formData.title ?? "").trim();
+		const payload = {
+			...formData,
+			title: formData.isPrivate
+				? (normalizedTitle || "Sin título")
+				: formData.title
+		};
+
 		try {
-			if (onSubmit) await onSubmit(formData);
+			if (onSubmit) await onSubmit(payload);
 		} catch (error) {
 			if (error.status === 422 && error.errors) {
 				const newFieldErrors = {};
@@ -171,6 +192,10 @@ const PastePanel = ({ onSubmit, publicPastes, mode, pasteKey: propKey, onConnect
 
 	const handleSelectPaste = (key) => navigate(`/s/${key}`);
 
+	// Lookup de paste estática:
+	// - 403: pide contraseña
+	// - 404: redirige al inicio
+	// Se hace en modo silencioso para que no abra el modal global en errores esperados.
 	const fetchPaste = async (key, pwd = "") => {
 		const url = import.meta.env.MODE === 'production'
 			? `https://api.miarma.net/v2/mpaste/pastes/s/${key}`
@@ -179,18 +204,23 @@ const PastePanel = ({ onSubmit, publicPastes, mode, pasteKey: propKey, onConnect
 		const headers = pwd ? { "X-Paste-Password": pwd } : {};
 
 		try {
-			const response = await getData(url, null, false, headers, true);
+			const response = await getData(url, {
+				params: null,
+				refresh: false,
+				headers,
+				silent: true,
+			});
 
 			if (response) {
 				setSelectedPaste(response);
 				setShowPasswordModal(false);
 				setFormData({
-					title: response.title ?? "",
+					...INITIAL_FORM_DATA,
+					title: (response.title ?? "").trim() || "Sin título",
 					content: response.content ?? "",
 					syntax: response.syntax || "plaintext",
 					burnAfter: response.burnAfter || false,
-					isPrivate: response.isPrivate || false,
-					password: ""
+					isPrivate: response.isPrivate || false
 				});
 			}
 		} catch (error) {
@@ -311,7 +341,7 @@ const PastePanel = ({ onSubmit, publicPastes, mode, pasteKey: propKey, onConnect
 								</FloatingLabel>
 
 								<div className="d-flex align-items-center ms-1">
-									{isSaving ? (
+									{connected && (isSaving ? (
 										<span className="text-muted" style={{ fontSize: '0.8rem' }}>
 											<FontAwesomeIcon icon={faCircle} className="pulse-animation me-2" style={{ color: '#ffc107', fontSize: '8px' }} />
 											Guardando cambios...
@@ -320,7 +350,7 @@ const PastePanel = ({ onSubmit, publicPastes, mode, pasteKey: propKey, onConnect
 										<span className="text-success" style={{ fontSize: '0.8rem' }}>
 											Cambios guardados
 										</span>
-									)}
+									))}
 								</div>
 
 								<Form.Check

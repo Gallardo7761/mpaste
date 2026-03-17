@@ -1,12 +1,10 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback } from "react";
 import axios from "axios";
 
 export const useData = (config, onError) => {
   const [data, setData] = useState(null);
   const [dataLoading, setLoading] = useState(true);
   const [dataError, setError] = useState(null);
-
-  const configString = JSON.stringify(config);
 
   const getAuthHeaders = (isFormData = false) => {
     const token = localStorage.getItem("token");
@@ -17,14 +15,20 @@ export const useData = (config, onError) => {
   };
 
   const handleAxiosError = (err) => {
-    const errorData = {
+    return {
       status: err.response?.status || (err.request ? "Network Error" : "Client Error"),
       message: err.response?.data?.message || err.message || "Error desconocido",
       errors: err.response?.data?.errors || null
     };
-    return errorData;
   };
 
+  const isExpectedPasteLookupError = (baseUrl, status) => {
+    const isPasteLookup = baseUrl?.includes("/pastes/");
+    return isPasteLookup && [403, 404, 500].includes(status);
+  };
+
+  // Carga inicial ligada al `config` del contexto.
+  // En lookup de pastes, algunos estados son esperados y no deben disparar error global.
   const fetchData = useCallback(async () => {
     if (!config?.baseUrl) return;
 
@@ -39,25 +43,25 @@ export const useData = (config, onError) => {
       setData(response.data);
     } catch (err) {
       const error = handleAxiosError(err);
-      const isPasteLookup = config.baseUrl.includes('/pastes/');
-
-      if (isPasteLookup && (error.status === 403 || error.status === 404 || error.status === 500)) {
-        console.log("Not in DB, assuming real-time...");
-        setError(error);
-      } else {
-        if (onError) onError(error);
-        setError(error);
-      }
+      if (!isExpectedPasteLookupError(config.baseUrl, error.status) && onError) onError(error);
+      setError(error);
     } finally {
       setLoading(false);
     }
-  }, [configString, onError]);
+  }, [config?.baseUrl, config?.params, onError]);
 
   useEffect(() => {
     fetchData();
   }, [fetchData]);
 
-  const requestWrapper = async (method, endpoint, payload = null, refresh = false, extraHeaders = {}, silent = false) => {
+  // Wrapper único para peticiones CRUD.
+  // Usa objeto de opciones para mantener llamadas claras y evitar errores por orden de argumentos.
+  const requestWrapper = async (method, endpoint, {
+    payload = null,
+    refresh = false,
+    extraHeaders = {},
+    silent = false,
+  } = {}) => {
     try {
       const isFormData = payload instanceof FormData;
 
@@ -98,9 +102,49 @@ export const useData = (config, onError) => {
 
   return {
     data, dataLoading, dataError,
-    getData: (url, params, refresh = true, h = {}, silent = false) => requestWrapper("get", url, params, refresh, h, silent),
-    postData: (url, body, refresh = true, silent = false) => requestWrapper("post", url, body, refresh, silent),
-    putData: (url, body, refresh = true, silent = false) => requestWrapper("put", url, body, refresh, silent),
-    deleteData: (url, refresh = true, silent = false) => requestWrapper("delete", url, null, refresh, silent),
+    getData: (url, paramsOrOptions, refresh = true, h = {}, silent = false) => {
+      const isOptionsObject =
+        paramsOrOptions &&
+        typeof paramsOrOptions === "object" &&
+        !Array.isArray(paramsOrOptions) &&
+        ("params" in paramsOrOptions || "refresh" in paramsOrOptions || "headers" in paramsOrOptions || "silent" in paramsOrOptions);
+
+      if (isOptionsObject) {
+        const {
+          params = null,
+          refresh: optionsRefresh = true,
+          headers = {},
+          silent: optionsSilent = false,
+        } = paramsOrOptions;
+
+        return requestWrapper("get", url, {
+          payload: params,
+          refresh: optionsRefresh,
+          extraHeaders: headers,
+          silent: optionsSilent,
+        });
+      }
+
+      return requestWrapper("get", url, {
+        payload: paramsOrOptions,
+        refresh,
+        extraHeaders: h,
+        silent,
+      });
+    },
+    postData: (url, body, refresh = true, silent = false) => requestWrapper("post", url, {
+      payload: body,
+      refresh,
+      silent,
+    }),
+    putData: (url, body, refresh = true, silent = false) => requestWrapper("put", url, {
+      payload: body,
+      refresh,
+      silent,
+    }),
+    deleteData: (url, refresh = true, silent = false) => requestWrapper("delete", url, {
+      refresh,
+      silent,
+    }),
   };
 };

@@ -9,22 +9,36 @@ export const ConfigProvider = ({ children }) => {
   const [configError, setError] = useState(null);
 
   useEffect(() => {
+    let isMounted = true;
+
     const fetchConfig = async () => {
       try {
-        const response = import.meta.env.MODE === 'production'
-          ? await fetch("/config/settings.prod.json")
-          : await fetch("/config/settings.dev.json");
+        const settingsPath = import.meta.env.MODE === 'production'
+          ? "/config/settings.prod.json"
+          : "/config/settings.dev.json";
+
+        const response = await fetch(settingsPath);
         if (!response.ok) throw new Error("Error al cargar settings.*.json");
         const json = await response.json();
-        setConfig(json);
+        if (isMounted) {
+          setConfig(json);
+        }
       } catch (err) {
-        setError(err.message);
+        if (isMounted) {
+          setError(err.message || "Error al cargar configuración");
+        }
       } finally {
-        setLoading(false);
+        if (isMounted) {
+          setLoading(false);
+        }
       }
     };
 
     fetchConfig();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   return (

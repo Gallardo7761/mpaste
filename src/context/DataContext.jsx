@@ -7,10 +7,12 @@ export const DataContext = createContext();
 
 export const DataProvider = ({ config, children }) => {
   const { showError } = useError();
-  const data = useData(config, showError);
+  // Centraliza errores HTTP para que cualquier consumidor de DataContext
+  // tenga comportamiento homogéneo sin repetir wiring en cada página.
+  const dataApi = useData(config, showError);
   
   return (
-    <DataContext.Provider value={data}>
+    <DataContext.Provider value={dataApi}>
       {children}
     </DataContext.Provider>
   );
