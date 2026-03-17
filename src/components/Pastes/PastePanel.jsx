@@ -42,7 +42,12 @@ const PastePanel = ({ onSubmit, publicPastes, mode, pasteKey: propKey, onConnect
 
 	const lastSavedContent = useRef(formData.content);
 
-	const isReadOnly = !!selectedPaste || mode === 'rt';
+	const isStaticView = mode === 'static' && !!activeKey;
+	const isReadOnly = isStaticView || mode === 'rt';
+	const isEditorReadOnly = isStaticView;
+	const titleValue = mode === 'rt'
+		? `Sesión: ${activeKey}`
+		: (selectedPaste?.title ?? formData.title ?? "");
 	const isRemoteChange = useRef(false);
 
 	// Sincroniza el panel cuando cambia el modo o la clave activa:
@@ -146,6 +151,8 @@ const PastePanel = ({ onSubmit, publicPastes, mode, pasteKey: propKey, onConnect
 
 	// Actualiza estado local y, si hay sesión RT activa, propaga el cambio al resto de clientes.
 	const handleChange = (key, value) => {
+		if (isReadOnly && mode !== 'rt') return;
+
 		const updatedData = { ...formData, [key]: value, isRt: mode === 'rt' };
 
 		setFormData(updatedData);
@@ -266,7 +273,7 @@ const PastePanel = ({ onSubmit, publicPastes, mode, pasteKey: propKey, onConnect
 							<CodeEditor
 								className="flex-fill custom-border rounded-4 overflow-hidden pt-4 pe-4"
 								syntax={formData.syntax}
-								readOnly={!!selectedPaste}
+								readOnly={isEditorReadOnly}
 								onChange={(val) => handleChange("content", val)}
 								value={formData.content ?? ""}
 								editorErrors={editorErrors}
@@ -287,7 +294,7 @@ const PastePanel = ({ onSubmit, publicPastes, mode, pasteKey: propKey, onConnect
 									<Form.Control
 										disabled={isReadOnly}
 										type="text"
-										value={mode === 'rt' ? `Sesión: ${activeKey}` : formData.title}
+										value={titleValue}
 										onChange={(e) => handleChange("title", e.target.value)}
 										isInvalid={!!fieldErrors.title}
 									/>
@@ -304,7 +311,7 @@ const PastePanel = ({ onSubmit, publicPastes, mode, pasteKey: propKey, onConnect
 									}
 								>
 									<Form.Select
-										disabled={!!selectedPaste}
+										disabled={isReadOnly}
 										value={formData.syntax}
 										onChange={(e) => handleChange("syntax", e.target.value)}
 									>
@@ -358,7 +365,7 @@ const PastePanel = ({ onSubmit, publicPastes, mode, pasteKey: propKey, onConnect
 									disabled={isReadOnly}
 									id="burnAfter"
 									label="volátil"
-									checked={formData.burnAfter}
+									checked={formData.burnAfter && !isReadOnly}
 									onChange={(e) => handleChange("burnAfter", e.target.checked)}
 									className="ms-1 d-flex gap-2 align-items-center"
 								/>
@@ -368,12 +375,12 @@ const PastePanel = ({ onSubmit, publicPastes, mode, pasteKey: propKey, onConnect
 									disabled={isReadOnly}
 									id="isPrivate"
 									label="privado"
-									checked={formData.isPrivate}
+									checked={formData.isPrivate && !isReadOnly}
 									onChange={(e) => handleChange("isPrivate", e.target.checked)}
 									className="ms-1 d-flex gap-2 align-items-center"
 								/>
 
-								{formData.isPrivate && (
+								{formData.isPrivate && !isReadOnly && (
 									<PasswordInput disabled={isReadOnly} onChange={(e) => handleChange("password", e.target.value)} />
 								)}
 
